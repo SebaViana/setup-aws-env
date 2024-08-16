@@ -11,7 +11,7 @@ def validate_aws_credentials(region):
     try:
         # Create an S3 client
         test_s3_client = boto3.client('s3', region_name=region)
-        
+
         # Attempt to list S3 buckets
         test_s3_client.list_buckets()
         print("AWS credentials are valid.")
@@ -36,18 +36,6 @@ def validate_aws_credentials(region):
     except Exception as e:
         print(f"Unexpected error: {e}")
         sys.exit(1)  # Exit with an error code
-
-def check_s3_bucket_exists(bucket_name):
-    s3_client = boto3.client('s3')
-    try:
-        s3_client.head_bucket(Bucket=bucket_name)
-        return True
-    except ClientError as e:
-        if e.response['Error']['Code'] == '404':
-            return False
-        else:
-            print(f"Error checking S3 bucket: {e}")
-            sys.exit(1)  # Exit with an error code
 
 def check_dynamodb_table_exists(table_name, region):
     dynamodb_client = boto3.client('dynamodb', region_name=region)
@@ -87,7 +75,11 @@ def create_s3_bucket(bucket_name, region):
         )
         print(f"S3 bucket '{bucket_name}' created and configured.")
     except ClientError as e:
-        print(f"Error creating S3 bucket: {e}")
+        if e.response['Error']['Code'] == 'BucketAlreadyExists':
+            print(f"Error creating S3 bucket: The requested bucket name '{bucket_name}' is already in use. Please choose a different name.")
+        else:
+            print(f"Error creating S3 bucket: {e}")
+        sys.exit(1)  # Exit with an error code
 
 def create_dynamodb_table(table_name, region):
     try:
@@ -114,27 +106,22 @@ def create_dynamodb_table(table_name, region):
 
 if __name__ == "__main__":
     validate_arguments()
-    
+
     # Get arguments passed from the workflow
     bucket_name = sys.argv[1]
     table_name = sys.argv[2]
     region = sys.argv[3]
-    
+
     validate_aws_credentials(region)
-    
-    # Check if the S3 bucket or DynamoDB table already exists
-    s3_exists = check_s3_bucket_exists(bucket_name)
+
+    # Check if the DynamoDB table already exists
     dynamodb_exists = check_dynamodb_table_exists(table_name, region)
-    
-    if s3_exists or dynamodb_exists:
-        if s3_exists:
-            print(f"S3 bucket '{bucket_name}' already exists.")
-        if dynamodb_exists:
-            print(f"DynamoDB table '{table_name}' already exists.")
-        print("Aborting creation process as one or more resources already exist.")
-        sys.exit(1)  # Exit with an error code
 
-    # Proceed with creation if both do not exist
-    create_s3_bucket(bucket_name, region)
-    create_dynamodb_table(table_name, region)
 
+    if dynamodb_exists:
+        print(f"DynamoDB table '{table_name}' already exists.")
+        print("Aborting DynamoDB creation process as the table already exists.")
+    else:
+        # Proceed with creating the DynamoDB table and S3 bucket if neither exist
+        create_s3_bucket(bucket_name, region)
+        create_dynamodb_table(table_name, region)
