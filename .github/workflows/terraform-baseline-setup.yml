@@ -22,7 +22,7 @@ jobs:
 
     - name: Run setup script
       run: |
-        python scripts/terraform-baseline-setup/terraform-baseline-setup.py ${{ vars.TF_BUCKET_NAME }} ${{ vars.TF_TABLE_NAME }} ${{ vars.AWS_REGION }}
+        python scripts/terraform-baseline-setup/terraform-baseline-setup.py ${{ vars.AWS_TF_BUCKET_NAME }} ${{ vars.AWS_TF_TABLE_NAME }} ${{ vars.AWS_REGION }}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
