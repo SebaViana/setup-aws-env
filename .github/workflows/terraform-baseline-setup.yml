@@ -1,0 +1,29 @@
+name: Setup Terraform Backend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11.2'
+
+    - name: Install dependencies
+      run: |
+        pip install -r scripts/terraform-baseline-setup/requirements.txt
+
+    - name: Run setup script
+      run: |
+        python scripts/terraform-baseline-setup/terraform-baseline-setup.py ${{ secrets.TF_BUCKET_NAME }} ${{ secrets.TF_TABLE_NAME }} ${{ secrets.AWS_REGION }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
